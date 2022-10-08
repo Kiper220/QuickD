@@ -1,0 +1,17 @@
+.dub
+.idea
+docs.json
+__dummy.html
+docs/
+build
+/quickd
+quickd.so
+quickd.dylib
+quickd.dll
+quickd.a
+quickd.lib
+quickd-test-*
+*.exe
+*.o
+*.obj
+*.lst

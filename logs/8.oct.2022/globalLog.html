@@ -1,0 +1,335 @@
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Application operation logs</title>
+    </head>
+    <body>
+        <div class="content">
+            <div class="log-content">
+                <h1>[8.oct.2022]Logs:</h1>
+                <input type="checkbox" id="fatal" checked>Fatal Errors</body>
+                <input type="checkbox" id="error" checked>Errors</body>
+                <input type="checkbox" id="warning" checked>Warnings</body>
+                <input type="checkbox" id="trace" checked>Traces</body>
+                <input type="checkbox" id="info" checked>Info</body>
+                <input type="checkbox" id="debugging" checked>Debugging</body>
+                <hr><style>
+    *{
+        font-family: 'Montserrat';
+    }
+    body{
+        margin: 0;
+        padding: 5px;
+        background-image: url("../../resource/images/logger background.png");
+        background-size: cover;
+        background-attachment: fixed;
+    }
+    .content{
+        width: 75vw;
+        min-width: 750px;
+        margin: 50px auto 50px auto;
+        min-height: calc(100vh - 100px - 30px);
+        padding: 10px;
+        border-radius: 10px;
+        background-color: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(25px);
+    }
+    .log-content>hr{
+        width: 50vw;
+        margin: 10px auto 10px 0;
+        border-style: solid;
+        height: 1px;
+        border-bottom: none;
+        border-left: none;
+        border-right: none;
+        border-color: #434355;
+    }
+
+    .log-content>div{
+        display: flex;
+        flex-flow: row-reverse;
+        border-radius: 10px;
+        margin: 10px 0;
+        overflow: hidden;
+        background-color: rgba(66, 0, 0, 0.226);
+        padding-right: max(70px, 1vw);
+        opacity: 0;
+        transform-origin: top;
+    }
+    .log>*{
+        cursor: text;
+        pointer-events:fill;
+    }
+    .log>p::before{
+        content: attr(preffix) ": ";
+        font-weight:300;
+    }
+    .log-content>div>.animator{
+        cursor: pointer;
+        display: block;
+        content: " ";
+        width: 1vw;
+        min-width: 60px;
+        margin-right: 10px;
+        transition: transform 0.25s, opacity 1s;
+    }
+    .log-content>div>.log>.message{
+        text-shadow: 0px 0px 0px rgba(255, 255, 255, 0);
+        transition: text-shadow 0.25s;
+    }
+    .log-content>div:hover>.log>.message{
+        text-shadow: 0px 0px 2px rgba(255, 255, 255, 1);
+    }
+    .log-content>div:hover>.animator{
+        transform: scaleX(100);
+    }
+    .message{
+        font-size: 25px;
+        padding-top: 14px;
+        padding-bottom: 14px;
+        margin: 0 auto;
+        box-sizing: border-box;
+        font-weight: bold;
+        text-align: center;
+    }
+    .log{
+        pointer-events: none;
+        display: flex;
+        flex-flow: column;
+        justify-content: left;
+        align-items: flex-start;
+        width: 100%;
+        z-index: 1;
+        height: var(--messageHeight);
+        transition: height 0.5s;
+        overflow-y: hidden;
+    }
+    .log>p{
+        margin: 0px;
+        padding: 7px 0;
+    }
+    .expanded{
+        color: rgb(255, 255, 255);
+        height: var(--childHeight);
+    }
+    .expanded-animator{
+        transform: scaleX(100);
+        opacity : 0.5;
+    }
+    .expanded:hover + .expanded-animator{
+        opacity : 1;
+    }
+    .expanded-animator:hover{
+        opacity : 1;
+    }
+    .fatal{
+        color: rgb(87, 1, 1); 
+        transition: color 0.25s;
+    }
+    .fatal>.animator{
+        background-color: rgba(66, 0, 0, 1);
+    }
+    .fatal:hover{
+        color: rgb(255, 255, 255);
+    }
+
+    .error{
+        background-color: rgba(172, 55, 55, 0.4);
+        color: rgb(131, 65, 65);
+        transition: color 0.25s;
+    }
+    .error>.animator{
+        background-color: rgba(172, 55, 55, 1);
+    }
+    .error:hover{
+        color: rgb(255, 255, 255);
+    }
+
+    .warning{
+        background-color: rgb(151, 136, 0, 0.4);
+        color: rgb(90, 81, 0);
+        transition: color 0.25s;
+    }
+    .warning>.animator{
+        background-color: rgba(151, 136, 0, 1);
+    }
+    .warning:hover{
+        color: rgb(255, 255, 255);
+    }
+    .trace{
+        background-color: rgb(67, 160, 177, 0.4);
+        color: rgb(0, 56, 66);
+        transition: color 0.25s;
+    }
+    .trace>.animator{
+        background-color: rgba(67, 160, 177, 1);
+    }
+    .trace:hover{
+        color: rgb(255, 255, 255);
+    }
+    .info{
+        background-color: rgb(137, 155, 158, 0.4);
+        color: rgb(46, 62, 65);
+        transition: color 0.25s;
+    }
+    .info>.animator{
+        background-color: rgb(118, 172, 182);
+    }
+    .info:hover{
+        color: rgb(255, 255, 255);
+    }
+    .debugging{
+        background-color: rgba(221, 66, 162, 0.4);
+        color: rgb(65, 0, 51);
+        transition: color 0.25s;
+    }
+    .debugging>.animator{
+        background-color: rgb(151, 46, 111);
+    }
+    .debugging:hover{
+        color: rgb(255, 255, 255);
+    }
+
+
+    .log-content>.fatal{
+        display: none;
+    }
+    input[id="fatal"]:checked ~ .fatal{
+        display: flex;
+    }
+
+    .log-content>.error{
+        display: none;
+    }
+    input[id="error"]:checked ~ .error{
+        display: flex;
+    }
+
+    .log-content>.warning{
+        display: none;
+    }
+    input[id="warning"]:checked ~ .warning{
+        display: flex;
+    }
+    .log-content>.visible{
+        transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+        transform: scaleY(1);
+        opacity: 1;
+    }
+
+    .log-content>.trace{
+        display: none;
+    }
+    input[id="trace"]:checked ~ .trace{
+        display: flex;
+    }
+
+    .log-content>.info{
+        display: none;
+    }
+    input[id="info"]:checked ~ .info{
+        display: flex;
+    }
+
+    .log-content>.debugging{
+        display: none;
+    }
+    input[id="debugging"]:checked ~ .debugging{
+        display: flex;
+    }
+    
+    </style>        
+    <script type="text/javascript">
+        function Update() {
+            let logs = document.querySelectorAll('.log');
+            logs = Array.from(logs);
+            for (id in logs) { 
+                let messageHeight = logs[id].querySelector('.message');
+                messageHeight = messageHeight.offsetHeight;
+
+                let allChild = logs[id].children;
+                let childHeight = 0;
+                for(let i = 0; i < allChild.length; i++){
+                    childHeight += allChild[i].offsetHeight;
+                }
+
+                logs[id].id = "log" + id;
+                logs[id].setAttribute("style", "--childHeight: " + childHeight  + "px; --messageHeight: " + messageHeight + "px;");
+                setTimeout(() => {
+                    let logs = document.querySelector('.log-content');
+                    logs = logs.children;
+                    for(let i = 0; i < logs.length; i++){
+                        if(logs[i].tagName == "DIV" && !logs[i].classList.contains("visible")){
+                            logs[i].classList.add("visible");
+                            break;
+                        }
+                    }
+                }, 100 + id * 100);
+
+                let animator = logs[id].parentElement;
+                animator =  animator.querySelector(".animator");
+                animator.setAttribute("onclick", "Expand('log" + id + "')");
+            }
+        };
+        window.onload = Update;
+        window.onresize = Update;
+        window.onhashchange = Update;
+        function Expand(id){
+            let log = document.getElementById(id);
+            if(log.classList.contains("expanded")){
+                log.classList.remove("expanded");
+                log.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                })
+                log = log.parentElement;
+                log = log.querySelector(".animator");
+                log.classList.remove("expanded-animator");
+            }
+            else{ 
+                let expanded = document.querySelector(".expanded");
+                if(expanded != null){
+                    expanded.classList.remove("expanded");
+                    expanded = expanded.parentElement;
+                    expanded = expanded.querySelector(".animator");
+                    expanded.classList.remove("expanded-animator");
+                }
+                log.classList.add("expanded");
+                log.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                })
+                log = log.parentElement;
+                log = log.querySelector(".animator");
+                log.classList.add("expanded-animator");
+            }
+        }
+    </script>    
+<div class="trace">
+    <div class="log">
+        <div class="message">Init memory usage</div>
+        <p preffix="Log module">"app" - line 137</p><p preffix="Used">0.0038147MB</p>
+    </div>
+    <div class="animator"></div>
+</div><div class="warning">
+    <div class="log">
+        <div class="message">This version of QuickD is the "develop" version. If you are not a QuickD developer, then use it only at your own risk :)</div>
+        <p preffix="Log module">"quickd" - line 13</p><p preffix="Version">-128.0.0-0d</p>
+    </div>
+    <div class="animator"></div>
+</div><div class="info">
+    <div class="log">
+        <div class="message">QuickD version -128.0.0-0d.</div>
+        <p preffix="Log module">"quickd" - line 13</p>
+    </div>
+    <div class="animator"></div>
+</div><div class="trace">
+    <div class="log">
+        <div class="message">Loggin start in 8.oct.2022!</div>
+        <p preffix="Log module">"" - line 0</p>
+    </div>
+    <div class="animator"></div>
+</div>
+        </div>
+    </div>
+</body>

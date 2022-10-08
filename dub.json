@@ -1,0 +1,34 @@
+{
+	"authors": [
+		"Гедерт Корней"
+	],
+	"dependencies": {
+		"bindbc-opengl": "~>1.0.2",
+		"bindbc-sdl": "~>1.2.1",
+		"colorize": "~>1.0.5"
+	},
+	"description": "A minimal D application.",
+	"license": "proprietary",
+	"name": "quickd",
+	"targetPath": "build",
+
+	"copyFiles-windows": [
+		"./winlibs/libs"
+	],
+
+	"copyFiles": [
+		"resource"
+	],
+	"subConfigurations": {
+		"bindbc-sdl": "dynamic",
+		"bindbc-opengl": "dynamicBC"
+	},
+	"stringImportPaths": [
+		"build_resource"
+	],
+	"versions": [
+		"SDL_2022",
+		"SDL_Image_205",
+		"GL_41"
+	]
+}
