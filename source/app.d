@@ -1,5 +1,15 @@
 import quickd;
 
+
+shared static this() {
+	import core.stdc.signal;
+	nothrow @nogc @system
+	extern(C) void handleSegv(int) {
+		assert(false, "Segmentation fault.");
+	}
+	signal(SIGSEGV, &handleSegv);
+}
+
 int main(){
 	debug {}
 	else{
@@ -8,14 +18,23 @@ int main(){
 			ShowWindow(GetConsoleWindow(), SW_HIDE);
 		}
 	}
-	try start();
-	catch(Exception exc){
+
+	try {
+		start();
+	}
+	catch(Throwable th){
 		LogMessage message = LogMessage();
 		message.message = "Application crashed";
 		message.status = LogMessage.Status.fatal;
-		message.exception = exc.toString;
+		message.exception = th.toString;
 
 		globalLogger.log(message);
+		version(Windows){
+			import std.stdio;
+			writeln("To finish, press enter: ");
+			readf("\n");
+		}
+		return 231;
 	}
 	return 0;
 }
@@ -70,65 +89,46 @@ void start() {
 	Window window = new Window;
 	window.addEvent(EventType.windowEvent, "applicationClose", toDelegate(&applicationClose));
 	window.addEvent(EventType.keyDown, "polyView", toDelegate(&polyView));
-
-	/// Create Renderer
 	Renderer renderer = new Renderer(window);
+	Mesh mesh;
+	mesh.vertexArray = [
+		Vector3!float([1f, 1f, 0f]),
+		Vector3!float([1f, -1f, 0f]),
+		Vector3!float([-1f, 1f, 0f]),
+		Vector3!float([-1f, -1f, 0f]),
+	];
+	mesh.indexBuffer = [0, 1, 2, 1, 2, 3];
+	mesh.uvArray = [
+		Vector2!float([0f, 0f]),
+		Vector2!float([0f, 1f]),
+		Vector2!float([1f, 0f]),
+		Vector2!float([1f, 1f]),
+	];
 
-	/// Create shader program
-	ShaderProgram program = renderer.createShaderProgram();
-	{
-		Shader fragment = renderer.createFragmentShader();
-		Shader vertex = renderer.createVertexShader();
-		vertex.setShader(vshader);
-		fragment.setShader(fshader);
-		vertex.buildShader();
-		fragment.buildShader();
+	Shader shader = renderer.createShader();
+	shader.setVertexShader(vshader);
+	shader.setFragmentShader(fshader);
 
-		program.bindFragmentShader(fragment);
-		program.bindVertexShader(vertex);
-		program.link();
-	}
-
-	/// Create mesh
-	Triangle[2] tr =
-		[
-			[
-				Vector3!float([-1f, -1f, 0.0f]),
-				Vector3!float([1f, -1f, 0.0f]),
-				Vector3!float([-1f, 1f, 0.0f]),
-			],
-			[
-				Vector3!float([-1f, 1f, 0.0f]),
-				Vector3!float([1f,  1f, 0.0f]),
-				Vector3!float([1f, -1f, 0.0f])
-			]
-		];
-	TextureCoordinate[2] tc =
-		[
-			[
-				Vector2!float([0f,1f]),
-				Vector2!float([1f,1f]),
-				Vector2!float([0f,0f]),
-			],
-			[
-				Vector2!float([0f,0f]),
-				Vector2!float([1f,0f]),
-				Vector2!float([1f,1f]),
-			]
-		];
-	Mesh mesh = new Mesh(tr);
-
-	/// Create model
-	Model model = renderer.createModel();
-	model.setShaderProgram(program);
-	model.setMesh(mesh);
-	model.setTextCord(tc);
+	shader.compile();
 
 	Texture texture = renderer.createTexture();
-	texture.loadTexture("./resource/images/test.bmp");
+	texture.loadTexture("resource/images/test.png");
 
-	model.setTexture("tex", texture);
-	/// Show Window.
+	Material mat = renderer.createMaterial();
+	mat.setShader(shader);
+
+	Model model = renderer.createModel();
+	model.setMesh(mesh);
+	model.setMaterial(mat);
+
+	Actor actor = new Actor;
+	actor.setModel(model);
+	Level level = new Level;
+	level.addActor("root", actor);
+
+	renderer.setLevel(level);
+
+	/// Log memory usage.
 	{
 		import core.memory;
 		GC.collect();
@@ -140,13 +140,11 @@ void start() {
 		message.used = used.to!string ~ "MB";
 		globalLogger.log(message);
 	}
+	/// Show Window.
 	window.show();
 
 	while(!close){
-		renderer.clear();
-		renderer.draw();
-		model.render();
-
+		renderer.render();
 		window.swap();
 		system.pollAllEvents();
 	}

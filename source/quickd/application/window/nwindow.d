@@ -24,10 +24,12 @@ shared static this(){
     }
 
     /// Load sdl2
-    version(Windows)
+    version(Windows){
         const auto sdl =  loadSDL("libs/SDL2.dll");
+    }
     else
         const auto sdl = loadSDL();
+
 
     /// Check SDL2 version
     if(sdl != sdlSupport) {
