@@ -107,7 +107,6 @@ class GLModel: Model{
             glBufferData(GL_ARRAY_BUFFER, float.sizeof * data.length, data.ptr, GL_STATIC_DRAW);
             glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * float.sizeof, null);
             glEnableVertexAttribArray(1);
-            import std.stdio; writeln(data);
 
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
