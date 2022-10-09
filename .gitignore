@@ -4,6 +4,9 @@ docs.json
 __dummy.html
 docs/
 build
+logs
+depends/stb/buildWin
+depends/stb/build
 /quickd
 quickd.so
 quickd.dylib
@@ -11,6 +14,7 @@ quickd.dll
 quickd.a
 quickd.lib
 quickd-test-*
+*.exe.ppdb
 *.exe
 *.o
 *.obj
