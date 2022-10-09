@@ -9,6 +9,9 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="gfm:integers-8.0.6" level="project" />
+    <orderEntry type="library" name="gfm:math-8.0.6" level="project" />
+    <orderEntry type="library" name="intel-intrinsics-1.10.8" level="project" />
     <orderEntry type="library" name="bindbc-opengl-1.0.2" level="project" />
     <orderEntry type="library" name="bindbc-loader-1.0.1" level="project" />
     <orderEntry type="library" name="bindbc-sdl-1.2.1" level="project" />

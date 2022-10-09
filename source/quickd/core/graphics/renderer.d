@@ -14,7 +14,7 @@ class Renderer{
         api.makeCurrentWindow(window);
     }
     void render(){
-        api.render();
+        api.render(this.window.getSize);
     }
     void setLevel(Level level){
         this.api.setLevel(level);

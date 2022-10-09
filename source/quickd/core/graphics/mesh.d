@@ -1,8 +1,8 @@
 module quickd.core.graphics.mesh;
-import quickd.core.math;
+public import gfm.math.vector;
 
 struct Mesh {
-    Vector3!float[] vertexArray;
-    Vector2!float[] uvArray;
+    vec3!float[] vertexArray;
+    vec2!float[] uvArray;
     uint[]          indexBuffer;
 }

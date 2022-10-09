@@ -1,5 +1,5 @@
 module quickd.application.window.wmevents;
-import quickd.core.math.vector;
+import gfm.math.vector;
 import std.typecons: Tuple, tuple;
 
 ////////////////////////////////////
@@ -9,15 +9,15 @@ struct MouseMotionEvent{
     uint timestamp;
     uint which;
     uint state;
-    Vector2!int pos;
-    Vector2!int rel;
+    vec2!int pos;
+    vec2!int rel;
 }
 struct MouseButtonEvent{
     uint timestamp;
     uint which;
     ubyte button;
     ubyte state;
-    Vector2!int pos;
+    vec2!int pos;
 }
 
 struct Keysym{
@@ -157,8 +157,8 @@ public:
                     event.motion.timestamp,
                     event.motion.which,
                     event.motion.state,
-                    Vector2!int([event.motion.x,event.motion.y]),
-                    Vector2!int([event.motion.xrel,event.motion.yrel])
+                    vec2!int([event.motion.x,event.motion.y]),
+                    vec2!int([event.motion.xrel,event.motion.yrel])
                 );
                 winID = event.motion.windowID;
             }
@@ -169,7 +169,7 @@ public:
                     event.button.which,
                     event.button.button,
                     event.button.state,
-                    Vector2!int([event.button.x,event.button.y])
+                    vec2!int([event.button.x,event.button.y])
                 );
                 winID = event.button.windowID;
             }

@@ -1,7 +1,7 @@
 module quickd.application.window.nwindow;
 
 import bindbc.sdl;
-import quickd.core.math.vector;
+import gfm.math.vector;
 public import quickd.application.window.wmevents;
 
 ////////////////////////////////////
@@ -55,7 +55,7 @@ shared static this(){
 class NativeWindow{
 public:
     /// Default constructor. Window create by automatic, but hidden.
-    this(string windowName = "Untitled", Vector2!int position = undefined, Vector2!int size = [640, 480]){
+    this(string windowName = "Untitled", vec2!int position = undefined, vec2!int size = [640, 480]){
         this.window = SDL_CreateWindow( windowName.ptr, position.x,
                                         position.y, size.x, size.y,
                                         SDL_WINDOW_OPENGL|SDL_WINDOW_HIDDEN|SDL_WINDOW_RESIZABLE);
@@ -77,6 +77,7 @@ public:
 
             globalLogger.log(message);
 
+            this.size = size;
             this.windowName = windowName;
         }
     }
@@ -122,6 +123,9 @@ public:
     }
     /// Call back for wmevents.
     void proccessEvent(WMEvent event){
+        if(event.type == EventType.windowEvent && event.window.event == WindowEventID.resised){
+            this.size = [event.window.data1, event.window.data2];
+        }
         foreach (el; eventList[event.type]){
             el(event);
         }
@@ -137,6 +141,10 @@ public:
     /// Get sdl2 window
     void* getLowLevelWindow(){
         return this.window;
+    }
+    /// Get window size
+    vec2!int getSize(){
+        return this.size;
     }
     /// Get sdl2 context
     SDL_GLContext getLowLevelContext(){
@@ -159,6 +167,7 @@ private:
     SDL_Window* window;     /// native window ptr
     uint winId;
     SDL_GLContext context;  /// glcontext struct
+    vec2!int size;
 
     void delegate(WMEvent)[string][EventType.lastEvent] eventList;
 }

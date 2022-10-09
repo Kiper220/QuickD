@@ -11,12 +11,16 @@
 	"dependencies": {
 		"bindbc-opengl": "~>1.0.2",
 		"bindbc-sdl": "~>1.2.1",
-		"colorize": "~>1.0.5"
+		"colorize": "~>1.0.5",
+		"gfm": "~>8.0.6"
 	},
-	"lflags-linux":[
+	"description": "A minimal D application.",
+	"lflags-linux": [
 		"$PACKAGE_DIR/depends/stb/libstb.a"
 	],
-	"description": "A minimal D application.",
+	"libs-windows-x86_64": [
+		"$PACKAGE_DIR/depends/stb/libstb"
+	],
 	"license": "proprietary",
 	"name": "quickd",
 	"stringImportPaths": [

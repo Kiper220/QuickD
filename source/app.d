@@ -48,6 +48,10 @@ void applicationClose(WMEvent event){
 	if(event.type == EventType.windowEvent && event.window.event == WindowEventID.resised){
 		import bindbc.opengl;
 		glViewport(0, 0, event.window.data1, event.window.data2);
+
+		//import gfm.math.matrix;
+		//shader.setProjection(mat4!float.orthographic());
+		//
 	}
 }
 void polyView(WMEvent event){
@@ -74,7 +78,7 @@ void polyView(WMEvent event){
 		}
 	}
 }
-
+Shader shader;
 string fshader = import("test_shaders/test1.frag");
 string vshader = import("test_shaders/test1.vert");
 
@@ -90,41 +94,68 @@ void start() {
 	window.addEvent(EventType.windowEvent, "applicationClose", toDelegate(&applicationClose));
 	window.addEvent(EventType.keyDown, "polyView", toDelegate(&polyView));
 	Renderer renderer = new Renderer(window);
-	Mesh mesh;
-	mesh.vertexArray = [
-		Vector3!float([1f, 1f, 0f]),
-		Vector3!float([1f, -1f, 0f]),
-		Vector3!float([-1f, 1f, 0f]),
-		Vector3!float([-1f, -1f, 0f]),
+	Mesh mesh1;
+	Mesh mesh2;
+	mesh1.vertexArray = [
+		vec3!float(1.92, 1.08, 0),
+		vec3!float(1.92, -1.08, 0),
+		vec3!float(-1.92, 1.08, 0),
+		vec3!float(-1.92, -1.08, 0),
 	];
-	mesh.indexBuffer = [0, 1, 2, 1, 2, 3];
-	mesh.uvArray = [
-		Vector2!float([0f, 0f]),
-		Vector2!float([0f, 1f]),
-		Vector2!float([1f, 0f]),
-		Vector2!float([1f, 1f]),
+	mesh1.indexBuffer = [0, 1, 2, 1, 2, 3];
+	mesh1.uvArray = [
+		vec2!float(0f, 0f),
+		vec2!float(0f, 1f),
+		vec2!float(1f, 0f),
+		vec2!float(1f, 1f),
+	];
+	mesh2.vertexArray = [
+		vec3!float(1, 1, 0),
+		vec3!float(1, -1, 0),
+		vec3!float(-1, 1, 0),
+		vec3!float(-1, -1, 0),
+	];
+	mesh2.indexBuffer = [0, 1, 2, 1, 2, 3];
+	mesh2.uvArray = [
+		vec2!float(1f, 0f),
+		vec2!float(1f, 1f),
+		vec2!float(0f, 0f),
+		vec2!float(0f, 1f),
 	];
 
-	Shader shader = renderer.createShader();
+	shader = renderer.createShader();
 	shader.setVertexShader(vshader);
 	shader.setFragmentShader(fshader);
 
 	shader.compile();
 
-	Texture texture = renderer.createTexture();
-	texture.loadTexture("resource/images/test.png");
+	Texture texture1 = renderer.createTexture();
+	Texture texture2 = renderer.createTexture();
+	texture1.loadTexture("resource/images/test.png");
+	texture2.loadTexture("resource/images/jar.jpg");
 
-	Material mat = renderer.createMaterial();
-	mat.setShader(shader);
+	Material mat1 = renderer.createMaterial();
+	Material mat2 = renderer.createMaterial();
+	mat1.setShader(shader);
+	mat1.addTexture("test", texture1);
+	mat2.setShader(shader);
+	mat2.addTexture("test", texture2);
 
-	Model model = renderer.createModel();
-	model.setMesh(mesh);
-	model.setMaterial(mat);
+	Model model1 = renderer.createModel();
+	Model model2 = renderer.createModel();
+	model1.setMesh(mesh1);
+	model1.setMaterial(mat1);
+	model2.setMesh(mesh2);
+	model2.setMaterial(mat2);
 
-	Actor actor = new Actor;
-	actor.setModel(model);
+	Actor actor1 = new Actor;
+	Actor actor2 = new Actor;
+	actor1.setModel(model1);
+	actor2.setModel(model2);
+
 	Level level = new Level;
-	level.addActor("root", actor);
+	level.addActor("root1", actor1);
+	level.addActor("root2", actor2);
 
 	renderer.setLevel(level);
 

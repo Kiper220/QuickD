@@ -1,7 +1,9 @@
 module quickd.core.graphics.renderapi;
-public import quickd.application.window.nwindow;
+public import
+quickd.application.window.nwindow,
+gfm.math.vector,
+gfm.math.matrix;
 import quickd.core.graphics;
-import quickd.core.math;
 
 enum ModelType{
     staticModel,
@@ -11,7 +13,7 @@ enum ModelType{
 /// Interface of RenderAPI
 interface RenderAPI{
     void makeCurrentWindow(NativeWindow);
-    void render();
+    void render(vec2!int size);
     void setLevel(Level level);
     void removeLevel();
     Model createModel();
@@ -67,10 +69,10 @@ class Level{
     }
 
 
-    void render(){                                          /// Unsafe method for multirender!!!!
+    void render(RenderAPI rapi){                            /// Unsafe method for multirender!!!!
         synchronized(this){
             foreach(actor; actors.values){
-                actor.render();
+                actor.render(rapi);
             }
         }
     }
@@ -125,18 +127,29 @@ class Actor{
     }
 
     void setModel(Model model){                             /// Set model for render.   (if not set => not render)
-        this.model = model;
+        synchronized(this){
+            this.model = model;
+        }
     }
     void removeModel(){                                     /// Remove model.           (if not set => not render)
-        this.model = null;
+        synchronized(this){
+            this.model = null;
+        }
     }
-    void render(){
-        this.model.render(this);
+    void render(RenderAPI rapi){
+        synchronized(this){
+            if(this.model !is null){
+                this.model.render(rapi, this);
+            }
+            foreach(actor; childsActor.values){
+                actor.render(rapi);
+            }
+        }
     }                                                       /// Don't call this.
 private:
-    Vector3!float position;     /// Actor local position
-    Vector3!float scale;        /// Actor local scale
-    Vector3!float rotation;     /// Actor local rotation
+    vec3!float position;     /// Actor local position
+    vec3!float scale;        /// Actor local scale
+    vec3!float rotation;     /// Actor local rotation
 
     Model model;                /// Actor render model
     Actor parent;               /// Parent actor
@@ -144,7 +157,7 @@ private:
 }
 /// Combines material and texture. A new instance can only be obtained from RenderAPI.
 interface Model{
-    void render(Actor actor);                               /// Don't call this.
+    void render(RenderAPI, Actor);                          /// Don't call this.
     ModelType getModelType();                               /// No implement.
     void setMesh(Mesh mesh);                                /// Set mesh.
     void setMaterial(Material material);                    /// Set material.
