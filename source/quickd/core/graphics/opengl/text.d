@@ -62,6 +62,11 @@ private static initText(){
 }
 
 class GLText: Text{
+struct Data{
+    Character character;
+    mat3x2!float data;
+    vec2!float texturePosition;
+}
     this(){
         initText();
         this.shader = new GLShader;
@@ -77,23 +82,52 @@ class GLText: Text{
     }
     void setText(dstring text){
         this.text = text;
+        data = null;
+        foreach(ch; text){
+            Data dat;
+            dat.character = font.getChar(ch);
+            data ~= dat;
+        }
+        this.prepeareText();
+    }
+    void prepeareText(){
+        int maxHeight;
+        foreach(ch; data){
+            maxHeight = maxHeight > ch.character.bearing.y ? maxHeight: ch.character.bearing.y;
+        }
+        float offsetX = 0;
+        foreach(ref ch; data){
+            ch.data.c[2][1] = cast(float)ch.character.bearing.y - maxHeight;
+            ch.data.c[2][0] = cast(float)offsetX + ch.character.bearing.x;
+            offsetX += cast(float)ch.character.advance/64f;
+
+            ch.data.c[1][0] = cast(float)ch.character.size.x / cast(float)font.getSize().x;
+            ch.data.c[1][1] = cast(float)ch.character.size.y / cast(float)font.getSize().y;
+
+            ch.data.c[0][0] = cast(float)ch.character.size.x;
+            ch.data.c[0][1] = cast(float)ch.character.size.y;
+
+            ch.texturePosition.v[0] = cast(float)ch.character.position.x / cast(float)font.getSize().x;
+            ch.texturePosition.v[1] = cast(float)ch.character.position.y / cast(float)font.getSize().y;
+
+            import std.stdio; writeln(ch.data.c);
+        }
+        import std.conv: to;
+        this.matrixPos = glGetUniformLocation(this.material.getShader().to!GLShader.getId(), "info");
+        this.texPos = glGetUniformLocation(this.material.getShader().to!GLShader.getId(), "texture_pos");
     }
     void render(RenderAPI api, Actor actor){
         import std.conv: to;
         GLShader shader = this.material.getShader().to!GLShader;
-        GLuint prog = shader.getId();
-        glUseProgram(prog);
+        const uint prog = shader.getId();
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, this.font.getId());
 
-        mat4!float projection = api.getProjection();
+        auto projection = api.getProjection();
 
-        mat4!float model = mat4!float.identity();
-        vec3!float pos = actor.getGlobalPosition;
-        vec3!float scale = actor.getGlobalScale;
+        auto pos = actor.getGlobalPosition;
+        auto scale = actor.getGlobalScale;
 
-        model = cast(mat4!float)(actor.getGlobalRotation) *(mat4!float([
+        auto model = cast(mat4!float)(actor.getGlobalRotation) *(mat4!float([
                 [   0,      0,       0,     0f],
                 [   0,      0,       0,     0f],
                 [   0,      0,       0,     0f],
@@ -105,55 +139,42 @@ class GLText: Text{
                 [   1,      1,       1,     1f]
         ]));
 
+        glUseProgram(prog);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, this.font.getId());
+
         glUniformMatrix4fv(shader.getProjectionLocation(), 1, GL_FALSE, cast(float*)&projection);
         glUniformMatrix4fv(shader.getModelLocation(), 1, GL_FALSE, cast(float*)&model);
 
         glBindVertexArray(textVAO);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, textVBO[2]);
 
-
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glEnable( GL_BLEND );
+        glEnable(GL_BLEND);
 
-        float advance = 0;
-        foreach(ch; this.text){
-            Character character = this.font.getChar(ch);
-            vec3!float size;
-            vec3!float position;
-            size.x = cast(float)character.size.x;
-            size.y = cast(float)character.size.y;
-            size.z = 1;
-            position.x = cast(float)character.position.x / cast(float)font.getSize().x;
-            position.y = cast(float)character.position.y / cast(float)font.getSize().y;
-            position.z = 0;
-            float ypos = 0;
-            vec2!float mod = [advance, ypos];
-
-
-            glUniform2fv(glGetUniformLocation(prog, "mod"), 1, cast(float*)&mod);
-            glUniform3fv(glGetUniformLocation(prog, "size"), 1, cast(float*)&size);
-            glUniform3fv(glGetUniformLocation(prog, "texture_pos"), 1, cast(float*)&position);
-            glUniform3fv(glGetUniformLocation(prog, "font"), 1, cast(float*)&position);
-            size.x /= cast(float)font.getSize().x;
-            size.y /= cast(float)font.getSize().y;
-
-            glUniform3fv(glGetUniformLocation(prog, "texSize"), 1, cast(float*)&size);
+        foreach(ch; data){
+            glUniformMatrix3x2fv(this.matrixPos, 1, GL_FALSE, cast(float*)&ch.data);
+            glUniform2fv(this.texPos, 1, cast(float*)&ch.texturePosition);
 
             glDrawElements(GL_TRIANGLES, cast(int)mesh.indexBuffer.length, GL_UNSIGNED_INT, cast(void*)null);
-            advance += character.advance/64f;
         }
         glDisable(GL_BLEND);
-
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
-        glUseProgram(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 private:
-    GLFont font;
-    dstring text;
+    GLFont      font;
+    dstring     text;
 
-    GLShader shader;
-    GLMaterial material;
+    Data[]      data;
+
+    GLShader    shader;
+    GLMaterial  material;
+
+    uint        matrixPos;
+    uint        texPos;
 }
 class GLFont: Font{
     shared static this(){
@@ -266,7 +287,7 @@ class GLFont: Font{
 
         return character;
     }
-    vec2!int getSize(){
+    vec2!int getSize() const pure{
         return this.atlas.size;
     }
     uint getId(){

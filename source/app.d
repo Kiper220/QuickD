@@ -98,8 +98,8 @@ void start() {
 
 	Font font = renderer.createFont();
 	Text text = renderer.createText();
-	//font.setFont("resource/fonts/fifaks 1.0 dev1/Fifaks10Dev1.ttf");
-	font.setFont("/usr/share/fonts/noto/NotoSerif-Regular.ttf");
+	font.setFont("resource/fonts/fifaks 1.0 dev1/Fifaks10Dev1.ttf");
+	//font.setFont("/usr/share/fonts/noto/NotoSerif-Regular.ttf");
 
 	font.setFontSize(50);
 
