@@ -1,7 +1,6 @@
 module quickd.application;
 public import
-quickd.application.window,
-quickd.application.renderer;
+quickd.application.window;
 
 class Application{
 public

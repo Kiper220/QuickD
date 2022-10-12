@@ -3,6 +3,8 @@
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
     <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/build_resource" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/resource" type="java-resource" />
       <sourceFolder url="file://$MODULE_DIR$/source" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.dub" />
       <excludeFolder url="file://$MODULE_DIR$/build" />
@@ -17,5 +19,6 @@
     <orderEntry type="library" name="bindbc-loader-1.0.1" level="project" />
     <orderEntry type="library" name="bindbc-sdl-1.2.1" level="project" />
     <orderEntry type="library" name="colorize-1.0.5" level="project" />
+    <orderEntry type="library" name="bindbc-freetype-1.0.3" level="project" />
   </component>
 </module>

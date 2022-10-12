@@ -1,6 +1,5 @@
 import quickd;
 
-
 shared static this() {
 	import core.stdc.signal;
 	nothrow @nogc @system
@@ -78,14 +77,14 @@ void polyView(WMEvent event){
 		}
 	}
 }
-Shader shader;
-string fshader = import("test_shaders/test1.frag");
-string vshader = import("test_shaders/test1.vert");
+string fshader = import("shaders/default/image.frag");
+string vshader = import("shaders/default/image.vert");
 
 void start() {
 	import std.conv: to;
 	import std.stdio;
 	import std.functional;
+	import std.datetime;
 
 	/// Get WMEventSystem instance for poll events.
 	WMEventSystem system = WMEventSystem.getInstance();
@@ -94,68 +93,28 @@ void start() {
 	window.addEvent(EventType.windowEvent, "applicationClose", toDelegate(&applicationClose));
 	window.addEvent(EventType.keyDown, "polyView", toDelegate(&polyView));
 	Renderer renderer = new Renderer(window);
-	Mesh mesh1;
-	Mesh mesh2;
-	mesh1.vertexArray = [
-		vec3!float(1.92, 1.08, 0),
-		vec3!float(1.92, -1.08, 0),
-		vec3!float(-1.92, 1.08, 0),
-		vec3!float(-1.92, -1.08, 0),
-	];
-	mesh1.indexBuffer = [0, 1, 2, 1, 2, 3];
-	mesh1.uvArray = [
-		vec2!float(0f, 0f),
-		vec2!float(0f, 1f),
-		vec2!float(1f, 0f),
-		vec2!float(1f, 1f),
-	];
-	mesh2.vertexArray = [
-		vec3!float(1, 1, 0),
-		vec3!float(1, -1, 0),
-		vec3!float(-1, 1, 0),
-		vec3!float(-1, -1, 0),
-	];
-	mesh2.indexBuffer = [0, 1, 2, 1, 2, 3];
-	mesh2.uvArray = [
-		vec2!float(1f, 0f),
-		vec2!float(1f, 1f),
-		vec2!float(0f, 0f),
-		vec2!float(0f, 1f),
-	];
+	renderer.setView(ViewSettings.windowSizedView);
 
-	shader = renderer.createShader();
-	shader.setVertexShader(vshader);
-	shader.setFragmentShader(fshader);
 
-	shader.compile();
+	Font font = renderer.createFont();
+	Text text = renderer.createText();
+	//font.setFont("resource/fonts/fifaks 1.0 dev1/Fifaks10Dev1.ttf");
+	font.setFont("/usr/share/fonts/noto/NotoSerif-Regular.ttf");
 
-	Texture texture1 = renderer.createTexture();
-	Texture texture2 = renderer.createTexture();
-	texture1.loadTexture("resource/images/test.png");
-	texture2.loadTexture("resource/images/jar.jpg");
+	font.setFontSize(50);
 
-	Material mat1 = renderer.createMaterial();
-	Material mat2 = renderer.createMaterial();
-	mat1.setShader(shader);
-	mat1.addTexture("test", texture1);
-	mat2.setShader(shader);
-	mat2.addTexture("test", texture2);
-
-	Model model1 = renderer.createModel();
-	Model model2 = renderer.createModel();
-	model1.setMesh(mesh1);
-	model1.setMaterial(mat1);
-	model2.setMesh(mesh2);
-	model2.setMaterial(mat2);
-
-	Actor actor1 = new Actor;
-	Actor actor2 = new Actor;
-	actor1.setModel(model1);
-	actor2.setModel(model2);
+	text.setFont(font);
+	font.loadChars("hg");
+	text.setText("Привет мир!");
 
 	Level level = new Level;
-	level.addActor("root1", actor1);
-	level.addActor("root2", actor2);
+	Actor actor = new Actor;
+	actor.setRenderable(text);
+	/*Sprite sp = new Sprite(renderer.getRenderAPI);
+	sp.position = [0,0,0.0001f];
+	sp.setImage("resource/images/kor.jpg");*/
+
+	level.addActor("sprite1", actor);
 
 	renderer.setLevel(level);
 
@@ -173,9 +132,15 @@ void start() {
 	}
 	/// Show Window.
 	window.show();
+	auto time = Clock.currTime();
+	float secs = 0;
+
 
 	while(!close){
+		secs += (Clock.currTime() - time).total!"nsecs" / 1_000_000_000f;
+		time = Clock.currTime();
 		renderer.render();
+
 		window.swap();
 		system.pollAllEvents();
 	}

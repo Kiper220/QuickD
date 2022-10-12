@@ -19,8 +19,17 @@ class Renderer{
     void setLevel(Level level){
         this.api.setLevel(level);
     }
+    void setView(ViewSettings viewSetting){
+        this.api.setView(viewSetting);
+    }
     void removeLevel(){
         this.api.removeLevel();
+    }
+    Text createText(){
+        return api.createText();
+    }
+    Font createFont(){
+        return api.createFont();
     }
     Model createModel(){
         return api.createModel();
@@ -33,6 +42,9 @@ class Renderer{
     }
     Shader createShader(){
         return api.createShader();
+    }
+    RenderAPI getRenderAPI(){
+        return this.api;
     }
 
     private:

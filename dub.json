@@ -9,6 +9,7 @@
 		"./winlibs/libs"
 	],
 	"dependencies": {
+		"bindbc-freetype": "~>1.0.3",
 		"bindbc-opengl": "~>1.0.2",
 		"bindbc-sdl": "~>1.2.1",
 		"colorize": "~>1.0.5",
