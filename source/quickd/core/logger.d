@@ -279,10 +279,10 @@ struct LogMessage{
     }
 
 
-    ref string opDispatch(string field)() @safe @property pure nothrow
+    string opDispatch(string field)() const @safe @property pure nothrow
     {
         string fieldStr = field.replace("_", " ").capitalize;
-        return *logData[fieldStr];
+        return logData[fieldStr];
     }
     void opDispatch(string field, T)(T value) @safe @property nothrow
     {

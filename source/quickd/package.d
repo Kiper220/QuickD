@@ -2,7 +2,8 @@ module quickd;
 import std.format;
 public import
 quickd.core,
-quickd.application;
+quickd.application,
+quickd.graphics;
 
 /// QuickD library version. Use to check the compatibility of the api
 immutable Version quickDVersion = Version("-128.0.0-0");

@@ -78,7 +78,6 @@ public:
             globalLogger.log(message);
 
             this.size = size;
-            this.windowName = windowName;
         }
     }
     /// For show window

@@ -35,7 +35,7 @@
 	"versions": [
 		"SDL_2022",
 		"SDL_Image_205",
-		"GL_46",
+		"GL_20",
 		"GL_AllowDeprecated"
 	]
 }
