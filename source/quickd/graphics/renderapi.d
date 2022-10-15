@@ -19,9 +19,12 @@ interface RenderAPI{
     void setLevel(Level level);
     void removeLevel();
     void setView(ViewSettings viewSetting);
+    void clear();
+    void finish();
     Text createText();
     Font createFont();
     Model createModel();
+    Mesh createMesh();
     Material createMaterial();
     Texture createTexture();
     Shader createShader();
@@ -34,10 +37,17 @@ class Renderer{
 
     }
     void setRenderApi(RenderAPI renderAPI){
-
+        this.renderAPI = renderAPI;
     }
     void setWindow(NativeWindow window){
-
+        this.window = window;
+    }
+    void setLevel(Level level){
+        this.renderAPI.setLevel(level);
+    }
+    void render(){
+        this.renderAPI.render(window.getSize());
+        window.swap();
     }
 
 private:
@@ -54,6 +64,7 @@ RenderAPI createOpenGLAPI(){
     if(!isGLLoaded){
         synchronized{
             if(!isGLLoaded){
+                isGLLoaded = true;
                 import quickd.core.logger: globalLogger, LogMessage;
                 import std.conv: to;
 
@@ -92,7 +103,9 @@ interface Model: Renderable{
     void setMaterial(Material material);                    /// Set material.
 }
 interface Mesh{
-
+    void setVertexArray(vec3!float[] vertexArray);
+    void setUVArray(vec2!float[] uvArray);
+    void setIndexBuffer(uint[] indexBuffer);
 }
 /// Сombines shader and textures. A new instance can only be obtained from RenderAPI.
 interface Material{
@@ -110,6 +123,7 @@ interface Texture{
     void loadTexture(string src);                           /// Load texture by name.
     void unloadTexture();                                   /// Unload texture.
     vec2!int getSize();
+    void setTextureId(uint);
 }
 /// Shader compiler. A new instance can only be obtained from RenderAPI.
 interface Shader{
@@ -131,6 +145,7 @@ interface Font{
     void setFontSize(ushort size);
     Character loadChar(dchar ch);
     void loadChars(dstring str);
+    uint getId();
 }
 struct Character {
     vec2!int    position;  /// Glyph position(atlas).

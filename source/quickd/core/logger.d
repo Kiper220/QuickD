@@ -110,10 +110,14 @@ class Logger{
             cwritefln("\t˪ %s: %s".color(text_color),"Log module", logModuleText);
         }
         foreach(key, value; message){
-            logNewText ~= q"{<p preffix="%s">%s</p>}".format(key, value);
-            cwritefln("\t˪ %s: %s".color(text_color), key, value);
+            if(key == "Console")
+                cwritefln("%s".color(text_color), value);
+            else {
+                logNewText ~= q"{<p preffix="%s">%s</p>}".format(key, value.replace("\n","<br>"));
+                cwritefln("\t˪ %s: %s".color(text_color), key, value);
+            }
         }
-        logNewText = logBlock.format(message.status.to!string, message.message, logNewText);
+        logNewText = logBlock.format(message.status.to!string, message.message.replace("\n","<br>"), logNewText);
         log_text = logNewText ~ log_text;
 
         logFile.seek(pos);

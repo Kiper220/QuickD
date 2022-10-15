@@ -76,9 +76,8 @@ public:
             message.status = message.Status.debugging;
 
             globalLogger.log(message);
-
-            this.size = size;
         }
+        this.size = size;
     }
     /// For show window
     void show(){

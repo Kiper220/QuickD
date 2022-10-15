@@ -8,10 +8,11 @@ gfm.math.matrix;
 class Level2D: Level{
     /// Render top level loop.
     void render(RenderAPI rapi){
-        Actor2D[] tmp;
-        synchronized(this) tmp = this.childListActors.dup;
-        foreach(actor; tmp){
-            actor.render(rapi);
+        synchronized(this){
+            Actor2D[] tmp = this.childListActors;
+            foreach(actor; tmp){
+                actor.render(rapi);
+            }
         }
     }
 
@@ -120,16 +121,20 @@ private:
 
 /// Class of Actor for 2D rendering.
 class Actor2D: Actor{
-    void setRenderable(){
-        /// TODO: Make implement;
+    void setRenderable(Renderable renderable){
+        this.renderable = renderable;
     }
     /// Render top level loop.
     void render(RenderAPI rapi){
-        if(this.enable){
-            Actor2D[] tmp;
-            synchronized(this) tmp = this.childListActors.dup;
-            foreach(actor; tmp){
-                actor.render(rapi);
+        synchronized(this){
+            if(this.enable){
+                if(this.renderable !is null){
+                    this.renderable.render(rapi, this);
+                }
+                Actor2D[] tmp = this.childListActors.dup;
+                foreach(actor; tmp){
+                    actor.render(rapi);
+                }
             }
         }
     }
@@ -343,6 +348,17 @@ class Actor2D: Actor{
             actor.recalculate();
         }
     }
+    mat4!float  getModelMatrix(){
+        import std.conv: to;
+
+        mat4!float matrix;
+        matrix.c[0] = (this.globMatrix.c[0] ~ 0.0).to!(float[]);
+        matrix.c[1] = (this.globMatrix.c[1] ~ 0.0).to!(float[]);
+        matrix.c[2] = [0f,0f,1f,0f];
+        matrix.c[3] = (this.globMatrix.c[2][0..2] ~ [0.0,1.0]).to!(float[]);
+
+        return matrix;
+    }
 
 private:
     mat3!double calculateMatrix() @safe{
@@ -353,11 +369,11 @@ private:
                     [0f,                              0.0,            1f]
         ];
         if(this.parrent is null){
-            locMatrix = mat3!float([
+            locMatrix = locMatrix * mat3!float([
                     [this.locScale.x,          0f,           0f],
                     [          0,         this.locScale.y,   0f],
                     [this.locPosition.x,this.locPosition.y,  1f]
-            ]) * locMatrix;
+            ]);
         }else {
             locMatrix = (locMatrix * mat3!float([
                     [this.locScale.x,          0f,           0f],
@@ -374,6 +390,8 @@ private:
 
     Actor2D[string] childMapActors;
     Actor2D[]       childListActors;
+
+    Renderable      renderable;
 
     vec2!float  locPosition = [0, 0];
     vec2!float  locScale = [1,1];

@@ -1,9 +1,9 @@
-#version 410 core
+#version 110
 
-layout (location = 0) in vec3 position;
-layout (location = 1) in vec2 texture_coordinate;
+attribute vec3 position;
+attribute vec2 texture_coordinate;
 
-out vec2 texCoord;
+varying vec2 texCoord;
 
 uniform mat4 model;
 uniform mat4 view;

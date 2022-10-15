@@ -7,6 +7,7 @@
 		"bindbc-sdl": "1.2.1",
 		"colorize": "1.0.5",
 		"gfm": "8.0.6",
-		"intel-intrinsics": "1.10.8"
+		"intel-intrinsics": "1.10.8",
+		"profiled": "0.0.1"
 	}
 }
