@@ -1,4 +1,5 @@
 module quickd.graphics.level2d;
+import quickd.graphics.renderapi;
 public import quickd.graphics.level,
 gfm.math.vector,
 gfm.math.matrix;
@@ -6,11 +7,11 @@ gfm.math.matrix;
 /// Class of Level for 2D rendering.
 class Level2D: Level{
     /// Render top level loop.
-    void render(){
+    void render(RenderAPI rapi){
         Actor2D[] tmp;
         synchronized(this) tmp = this.childListActors.dup;
         foreach(actor; tmp){
-            actor.render();
+            actor.render(rapi);
         }
     }
 
@@ -123,12 +124,12 @@ class Actor2D: Actor{
         /// TODO: Make implement;
     }
     /// Render top level loop.
-    void render(){
+    void render(RenderAPI rapi){
         if(this.enable){
             Actor2D[] tmp;
             synchronized(this) tmp = this.childListActors.dup;
             foreach(actor; tmp){
-                actor.render();
+                actor.render(rapi);
             }
         }
     }
@@ -251,7 +252,7 @@ class Actor2D: Actor{
         Actor2D[] tmp;
 
         synchronized(this){
-            mat3!float locMatrix = calculateMatrix();
+            mat3!double locMatrix = calculateMatrix();
 
             this.globPosition.x = locMatrix.c[2][0];
             this.globPosition.y = locMatrix.c[2][1];
@@ -277,7 +278,7 @@ class Actor2D: Actor{
         this.locPosition = position;
         import std.math;
 
-        mat3!float locMatrix = calculateMatrix();
+        mat3!double locMatrix = calculateMatrix();
 
         this.globMatrix = locMatrix;
         this.globPosition = locMatrix.c[2][0..2];
@@ -297,7 +298,7 @@ class Actor2D: Actor{
         this.locScale = scale;
         import std.math;
 
-        mat3!float locMatrix = calculateMatrix();
+        mat3!double locMatrix = calculateMatrix();
 
         this.globMatrix = locMatrix;
         this.globScale.x = sqrt(locMatrix.c[0][0] * locMatrix.c[0][0] + locMatrix.c[0][1]*locMatrix.c[0][1]);
@@ -317,16 +318,18 @@ class Actor2D: Actor{
     }
     void rotation(float rotation) @safe @property{
         import std.math;
-        while(rotation > 360) rotation -= 360;
-        while(rotation < -360) rotation += 360;
-
-        if(abs(rotation - 90) < 0.001) rotation = 89.9;
-        else if(abs(rotation - 180) < 0.001) rotation = 179.9;
-        else if(abs(rotation - 270) < 0.001) rotation = 269.9;
+        if(rotation > 360) {
+            int count = cast(int)floor(rotation / 360.0);
+            rotation += 360*count;
+        }
+        else if(rotation < -360) {
+            int count = -cast(int)ceil(rotation / 360.0);
+            rotation += 360*count;
+        }
 
         this.locRotation = rotation / 180f * PI;
 
-        mat3!float locMatrix = calculateMatrix();
+        mat3!double locMatrix = calculateMatrix();
 
         this.globMatrix = locMatrix;
         this.globScale.x = sqrt(locMatrix.c[0][0] * locMatrix.c[0][0] + locMatrix.c[0][1]*locMatrix.c[0][1]);
@@ -342,12 +345,12 @@ class Actor2D: Actor{
     }
 
 private:
-    mat3!float calculateMatrix() @safe{
+    mat3!double calculateMatrix() @safe{
         import std.math;
-        mat3!float locMatrix = [
+        mat3!double locMatrix = [
                     [cos(this.locRotation),   -sin(this.locRotation), 0f],
-                    [sin(this.locRotation),  cos(this.locRotation), 0f],
-                    [0f,                       0f,           1f]
+                    [sin(this.locRotation),  cos(this.locRotation),   0f],
+                    [0f,                              0.0,            1f]
         ];
         if(this.parrent is null){
             locMatrix = mat3!float([
@@ -372,15 +375,61 @@ private:
     Actor2D[string] childMapActors;
     Actor2D[]       childListActors;
 
-    vec2!float   locPosition = [0, 0];
+    vec2!float  locPosition = [0, 0];
     vec2!float  locScale = [1,1];
-    float       locRotation = 0;
+    double      locRotation = 0;
 
-    vec2!float   globPosition;
+    vec2!float  globPosition;
     vec2!float  globScale;
-    float       globRotation;
+    double      globRotation;
 
-    mat3!float  globMatrix;
+    mat3!double  globMatrix;
 
     bool        enable = true;
+}
+unittest{
+    import quickd;
+    import std.math;
+    import std.conv;
+
+    scope(success){
+        import std.stdio;
+        import colorize : fg, color, cwrite;
+        write(__MODULE__ ~ "." ~ Actor.stringof ~ " — [");
+        cwrite("✓".color(fg.green));
+        write("]\n");
+        stdout.flush();
+    }
+    scope(failure){
+        import std.stdio;
+        import colorize : fg, color, cwrite;
+        write(__MODULE__ ~ "." ~ Actor.stringof ~ " — [");
+        cwrite("✖".color(fg.red));
+        write("]\n");
+        stdout.flush();
+    }
+
+    Level2D level = new Level2D;
+    Actor2D actor1 = new Actor2D;
+    Actor2D actor2 = new Actor2D;
+    Actor2D actor3 = new Actor2D;
+    Actor2D actor4 = new Actor2D;
+    Actor2D actor5 = new Actor2D;
+
+    level.addActor2D("actor1", actor1);
+    actor1.addActor2D("actor54", actor2);
+    actor1.addActor2D("actor45", actor3);
+    actor3.addActor2D("actor23", actor4);
+    actor4.addActor2D("actor23", actor5);
+
+    actor1.position = vec2!float([5f, 0]);
+    actor1.rotation = 90.0;
+    auto position = actor4.globalPosition();
+    auto rotation = actor4.globalRotation();
+    if(!position.x.isClose(3.06152e-16) || !position.y.isClose(-5)){
+        throw new Exception("Position calculation is't curretly work: " ~ position.to!string ~ " != [3.06152e-16, -5]");
+    }
+    if(!rotation.isClose(90)){
+        throw new Exception("Rotation calculation is't curretly work: " ~ rotation.to!string ~ " != 90");
+    }
 }

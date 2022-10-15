@@ -39,23 +39,7 @@ int main(){
 
 void start(){
 	import quickd;
-	import std.stdio;
 	Level2D level = new Level2D;
-	Actor2D actor1 = new Actor2D;
-	Actor2D actor2 = new Actor2D;
-	Actor2D actor3 = new Actor2D;
-	Actor2D actor4 = new Actor2D;
-	Actor2D actor5 = new Actor2D;
-
-	level.addActor2D("actor1", actor1);
-	actor1.addActor2D("actor54", actor2);
-	actor1.addActor2D("actor45", actor3);
-	actor3.addActor2D("actor23", actor4);
-	actor4.addActor2D("actor23", actor5);
-
-	actor4.position = vec2!float([5f, 0]);
-	foreach(i; 0..180){
-		actor1.rotation = i;
-	}
-
+	Window window = new Window;
+	RenderAPI renderAPI = createOpenGLAPI();
 }

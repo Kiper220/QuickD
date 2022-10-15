@@ -1,7 +1,6 @@
 module quickd.application.window;
 import gfm.math.vector;
-public import
-quickd.application.window.nwindow;
+public import quickd.application.window.nwindow;
 
 class Window: NativeWindow{
 public:
