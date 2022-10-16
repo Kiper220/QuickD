@@ -112,12 +112,15 @@ void start(){
 	Level2D level = new Level2D;
 	Actor2D actor1 = new Actor2D;
 	Actor2D actor2 = new Actor2D;
+	Actor2D actor3 = new Actor2D;
 
 	RenderAPI renderAPI = createOpenGLAPI();
 
 
-	Text 		text 		= api.createText();
+	Text 		text1 		= api.createText();
+	Text 		text2 		= api.createText();
 	Font 		font		= api.createFont();
+	Font 		font2		= api.createFont();
 	Shader 		shader		= api.createShader();
 	Texture 	texture 	= api.createTexture();
 	Material 	material 	= api.createMaterial();
@@ -144,14 +147,23 @@ void start(){
 	model.setMaterial(material);
 
 	font.setFont("resource/fonts/fifaks 1.0 dev1/Fifaks10Dev1.ttf");
+	font2.setFont("resource/fonts/fifaks 1.0 dev1/Fifaks10Dev1.ttf");
+
 	font.setFontSize(40);
-	text.setFont(font);
-	text.setText("ОЛЕГ, МЫ ЭТО СДЕЛАЛИ!!!! *плак*плак*");
+	font2.setFontSize(40);
+
+	text1.setFont(font);
+	text2.setFont(font2);
+	text1.setText("ОЛЕГ, МЫ ЭТО СДЕЛАЛИ!!!! *плак*плак*");
 
 	actor1.setRenderable(model);
-	actor2.setRenderable(text);
+	actor2.setRenderable(text1);
+	actor3.setRenderable(text2);
+
 	level.addActor2D("actor1", actor1);
 	level.addActor2D("actor2", actor2);
+	level.addActor2D("fps", actor3);
+
 	actor2.position = vec2!float([20f, 0]);
 	actor2.rotation = 45f;
 
@@ -159,9 +171,28 @@ void start(){
 
 	window.show();
 
+	import std.datetime;
+
+	auto start = Clock.currTime();
+	float min = 10000;
+	float max;
+	float fps;
 	while(!close){
+		import std.format;
+		system.pollAllEvents();
+
+		text2.setText("%.1f".format(fps).to!dstring ~ "FPS");
+
+		auto offsetSize = text2.getOffsetSize();
+		actor3.position = vec2!float([window.getSize().x - offsetSize.x, 0]);
 		renderer.render();
 
-		system.pollAllEvents();
+		fps = (1000f / (Clock.currTime() - start).total!"msecs");
+		start = Clock.currTime();
+
+		min = min < fps? min: fps;
+		max = max > fps? max: fps;
 	}
+	writeln("Max fps: ", max);
+	writeln("Min fps: ", min);
 }

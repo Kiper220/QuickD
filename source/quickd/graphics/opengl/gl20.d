@@ -53,12 +53,12 @@ class OpenGL20API: OpenGLAPI{
                 break;
             }
 
+        glFinish();
         glClearColor(0,0,0,0);
         glClear(GL_COLOR_BUFFER_BIT);
         if(this.level !is null){
             this.level.render(this);
         }
-        glFinish();
     }
     void setLevel(Level level){
         this.level = level;
@@ -534,6 +534,7 @@ class GL20Text: GLText{
             ch.data.c[0][2] = cast(float)ch.character.position.x / cast(float)font.getSize().x;
             ch.data.c[1][2] = cast(float)ch.character.position.y / cast(float)font.getSize().y;
         }
+        this.size = vec2!int([cast(int)offsetX, cast(int)maxHeight]);
         import std.conv: to;
         this.matrixPos = glGetUniformLocation(shader.getId(), "info");
     }
@@ -567,13 +568,17 @@ class GL20Text: GLText{
         mesh.unbind();
         glBindTexture(GL_TEXTURE_2D, 0);
     }
+    vec2!int getOffsetSize(){
+        return this.size;
+    }
 private:
-    GL20Font      font;
+    vec2!int     size;
+    GL20Font    font;
     dstring     text;
 
     Data[]      data;
 
-    GL20Shader    shader;
+    GL20Shader  shader;
 
     uint        matrixPos;
     uint        texPos;

@@ -139,6 +139,7 @@ interface Shader{
 interface Text: Renderable{
     void setFont(Font font);
     void setText(dstring text);
+    vec2!int getOffsetSize();
 }
 interface Font{
     void setFont(string dest);
