@@ -120,7 +120,6 @@ void start(){
 	Text 		text1 		= api.createText();
 	Text 		text2 		= api.createText();
 	Font 		font		= api.createFont();
-	Font 		font2		= api.createFont();
 	Shader 		shader		= api.createShader();
 	Texture 	texture 	= api.createTexture();
 	Material 	material 	= api.createMaterial();
@@ -147,14 +146,12 @@ void start(){
 	model.setMaterial(material);
 
 	font.setFont("resource/fonts/fifaks 1.0 dev1/Fifaks10Dev1.ttf");
-	font2.setFont("resource/fonts/fifaks 1.0 dev1/Fifaks10Dev1.ttf");
-
-	font.setFontSize(40);
-	font2.setFontSize(40);
 
 	text1.setFont(font);
-	text2.setFont(font2);
-	text1.setText("ОЛЕГ, МЫ ЭТО СДЕЛАЛИ!!!! *плак*плак*");
+	text2.setFont(font);
+	text1.setText("Ну и насколько быстро?");
+	text1.setFontSize(40);
+	text2.setFontSize(40);
 
 	actor1.setRenderable(model);
 	actor2.setRenderable(text1);
@@ -174,8 +171,6 @@ void start(){
 	import std.datetime;
 
 	auto start = Clock.currTime();
-	float min = 10000;
-	float max;
 	float fps;
 	while(!close){
 		import std.format;
@@ -189,10 +184,5 @@ void start(){
 
 		fps = (1000f / (Clock.currTime() - start).total!"msecs");
 		start = Clock.currTime();
-
-		min = min < fps? min: fps;
-		max = max > fps? max: fps;
 	}
-	writeln("Max fps: ", max);
-	writeln("Min fps: ", min);
 }

@@ -502,7 +502,10 @@ class GL20Text: GLText{
     }
     void setFont(Font font){
         import std.conv: to;
+        if(this.font !is null)
+            this.font.removeCallBack(this.fontId);
         this.font = font.to!GL20Font;
+        this.fontId = this.font.addCallBack(&this.prepeareText);
     }
     void setText(dstring text){
         this.text = text;
@@ -572,7 +575,9 @@ class GL20Text: GLText{
         return this.size;
     }
 private:
-    vec2!int     size;
+    size_t      fontId;
+
+    vec2!int    size;
     GL20Font    font;
     dstring     text;
 
@@ -584,6 +589,7 @@ private:
     uint        texPos;
 }
 class GL20Font: GLFont{
+    /// TODO: Add regenerate/clear font atlas(for example, for loading and unloading languages.)
     shared static this(){
         version(Windows) loadFreeType("libs/freetype.dll");
         else loadFreeType();
@@ -617,7 +623,7 @@ class GL20Font: GLFont{
         }
         this.fontDest = dest;
     }
-    void setFontSize(ushort size){
+    void setFontSize(uint id, ushort size){
         import std.math.rounding: ceil;
         FT_Set_Pixel_Sizes(face, 0, size);
 
@@ -628,6 +634,7 @@ class GL20Font: GLFont{
         int fontWidth = cast(int)ceil(((*face).bbox.xMax - (*face).bbox.xMin) * pixel_size / (*face).units_per_EM);
 
         this.atlas.setMaxSize(vec2!int([fontWidth, fontHeight]));
+        /// TODO: write a normal set font size(for normal load and read font. Read in any size for one font.)
     }
     Character getChar(dchar ch){
         auto character = ch in this.characters;
@@ -691,7 +698,17 @@ class GL20Font: GLFont{
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glBindTexture(GL_TEXTURE_2D, 0);
 
+        foreach(ref callback; this.callBacks.values)
+            callback();
+
         return character;
+    }
+    size_t addCallBack(void delegate() dg){
+        this.callBacks[this.id] = dg;
+        return this.id++;
+    }
+    void removeCallBack(size_t id){
+        this.callBacks.remove(id);
     }
     vec2!int getSize() const pure{
         return this.atlas.size;
@@ -710,11 +727,21 @@ class GL20Font: GLFont{
     }
     GLShader shader;
 private:
-    uint                textureId;
-    Character[dchar]    characters;
-    Atlas               atlas;
-    string              fontDest;
-    FT_Face             face = null;
+    struct SizedFont{
+        Character[dchar]        characters;
+        Atlas                   atlas;
+    }
+    void delegate()[size_t] callBacks;
+    size_t                  id;
+
+    uint                    textureId;
+
+    SizedFont[uint]         sizedFont;
+    uint[uint]              count;
+    uint[uint]              idToSize;
+
+    string                  fontDest;
+    FT_Face                 face = null;
 }
 
 struct Atlas{
@@ -757,10 +784,10 @@ struct Atlas{
         return character;
     }
 
-    ubyte[] buffer;
-    uint    yLine;
-    vec2!int size;
+    ubyte[]     buffer;
+    uint        yLine;
+    vec2!int    size;
     private:
-    vec2!uint position;
-    vec2!uint maxCharSize;
+    vec2!uint   position;
+    vec2!uint   maxCharSize;
 }
