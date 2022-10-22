@@ -138,15 +138,14 @@ interface Shader{
 
 interface Text: Renderable{
     void setFont(Font font);
+    void setFontSize(uint size);
     void setText(dstring text);
     vec2!int getOffsetSize();
 }
 interface Font{
     void setFont(string dest);
-    void setFontSize(ushort size);
-    Character loadChar(dchar ch);
-    void loadChars(dstring str);
-    uint getId();
+    vec2!int getSize(uint id) const pure;
+    Character getChar(uint id, dchar ch);
 }
 struct Character {
     vec2!int    position;  /// Glyph position(atlas).

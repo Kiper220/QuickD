@@ -19,3 +19,5 @@ quickd-test-*
 *.o
 *.obj
 *.lst
+*.7z
+*.zip

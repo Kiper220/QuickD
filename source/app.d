@@ -149,9 +149,10 @@ void start(){
 
 	text1.setFont(font);
 	text2.setFont(font);
-	text1.setText("Ну и насколько быстро?");
 	text1.setFontSize(40);
-	text2.setFontSize(40);
+	text2.setFontSize(15);
+	//text2.setFontSize(40);
+	text1.setText("Ну и насколько быстро?");
 
 	actor1.setRenderable(model);
 	actor2.setRenderable(text1);
@@ -174,6 +175,9 @@ void start(){
 	float fps;
 	while(!close){
 		import std.format;
+		import core.memory;
+		GC.collect();
+
 		system.pollAllEvents();
 
 		text2.setText("%.1f".format(fps).to!dstring ~ "FPS");

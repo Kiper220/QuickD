@@ -503,16 +503,22 @@ class GL20Text: GLText{
     void setFont(Font font){
         import std.conv: to;
         if(this.font !is null)
-            this.font.removeCallBack(this.fontId);
+            this.font.unregister(this.fontId);
         this.font = font.to!GL20Font;
-        this.fontId = this.font.addCallBack(&this.prepeareText);
+        this.fontId = this.font.register(20u, &this.prepeareText);
+    }
+    void setFontSize(uint size){
+        if(this.font !is null){
+            this.font.unregister(this.fontId);
+            this.fontId = this.font.register(size, &this.prepeareText);
+        }
     }
     void setText(dstring text){
         this.text = text;
         data = null;
         foreach(ch; text){
             Data dat;
-            dat.character = font.getChar(ch);
+            dat.character = font.getChar(this.fontId, ch);
             data ~= dat;
         }
         this.prepeareText();
@@ -528,14 +534,14 @@ class GL20Text: GLText{
             ch.data.c[2][0] = cast(float)offsetX + ch.character.bearing.x;
             offsetX += cast(float)ch.character.advance/64f;
 
-            ch.data.c[1][0] = cast(float)ch.character.size.x / cast(float)font.getSize().x;
-            ch.data.c[1][1] = cast(float)ch.character.size.y / cast(float)font.getSize().y;
+            ch.data.c[1][0] = cast(float)ch.character.size.x / cast(float)font.getSize(this.fontId).x;
+            ch.data.c[1][1] = cast(float)ch.character.size.y / cast(float)font.getSize(this.fontId).y;
 
             ch.data.c[0][0] = cast(float)ch.character.size.x;
             ch.data.c[0][1] = cast(float)ch.character.size.y;
 
-            ch.data.c[0][2] = cast(float)ch.character.position.x / cast(float)font.getSize().x;
-            ch.data.c[1][2] = cast(float)ch.character.position.y / cast(float)font.getSize().y;
+            ch.data.c[0][2] = cast(float)ch.character.position.x / cast(float)font.getSize(this.fontId).x;
+            ch.data.c[1][2] = cast(float)ch.character.position.y / cast(float)font.getSize(this.fontId).y;
         }
         this.size = vec2!int([cast(int)offsetX, cast(int)maxHeight]);
         import std.conv: to;
@@ -559,7 +565,7 @@ class GL20Text: GLText{
         glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, this.font.getId());
+        glBindTexture(GL_TEXTURE_2D, this.font.getTextureId(this.fontId));
 
         foreach(ch; data){
             glUniformMatrix3fv(this.matrixPos, 1, GL_FALSE, cast(float*)&ch.data);
@@ -575,9 +581,9 @@ class GL20Text: GLText{
         return this.size;
     }
 private:
-    size_t      fontId;
-
+    uint      fontId;
     vec2!int    size;
+
     GL20Font    font;
     dstring     text;
 
@@ -589,7 +595,135 @@ private:
     uint        texPos;
 }
 class GL20Font: GLFont{
-    /// TODO: Add regenerate/clear font atlas(for example, for loading and unloading languages.)
+    struct SizedFont{
+        this(int size, FT_Face face){
+            import std.math: ceil;
+            glGenTextures(1, &textureId);
+            this.face = face;
+            FT_Set_Pixel_Sizes(face, 0, size);
+
+            const double pixel_size = size;
+
+            // Высота и ширина шрифта в пикселях
+            int fontHeight = cast(int)ceil(((*face).bbox.yMax - (*face).bbox.yMin) * pixel_size / (*face).units_per_EM);
+            int fontWidth = cast(int)ceil(((*face).bbox.xMax - (*face).bbox.xMin) * pixel_size / (*face).units_per_EM);
+
+            this.atlas.setMaxSize(vec2!int([fontWidth, fontHeight]));
+            this.size = size;
+        }
+        void clear(FT_Face face){
+            import std.math: ceil;
+
+            this.atlas.clear();
+            this.characters.clear();
+            this.face = face;
+
+            const double pixel_size = size;
+
+            // Высота и ширина шрифта в пикселях
+            int fontHeight = cast(int)ceil(((*face).bbox.yMax - (*face).bbox.yMin) * pixel_size / (*face).units_per_EM);
+            int fontWidth = cast(int)ceil(((*face).bbox.xMax - (*face).bbox.xMin) * pixel_size / (*face).units_per_EM);
+
+            this.atlas.setMaxSize(vec2!int([fontWidth, fontHeight]));
+
+            foreach(cb; callBack){
+                cb();
+            }
+        }
+        Character getChar(dchar ch){
+            auto character = ch in this.characters;
+            if(character is null) return loadChar(ch);
+            return *character;
+        }
+        Character loadChar(dchar ch){
+            debug if((ch in this.characters) !is null){
+                import quickd.core.logger: globalLogger, LogMessage;
+                import std.conv: to;
+                LogMessage message = LogMessage();
+
+                message.message = "This font is allready loaded";
+                message.symbol  = ch.to!string;
+                message.status  = LogMessage.Status.error;
+
+                globalLogger.log(message);
+                throw new Exception("Font is allready loaded: " ~ ch.to!string);
+            }
+            FT_Set_Pixel_Sizes(face, 0, size);
+            if (FT_Load_Char(face, cast(uint)ch, FT_LOAD_RENDER)){
+                import quickd.core.logger: globalLogger, LogMessage;
+                import std.conv: to;
+                LogMessage message = LogMessage();
+
+                message.message = "Freetype failed to load Glyph";
+                message.symbol  = ch.to!string;
+                message.status  = LogMessage.Status.fatal;
+
+                globalLogger.log(message);
+                assert(false);
+            }
+            const size_t glyphSizeX = (*face).glyph.bitmap.width;
+            const size_t glyphSizeY = (*face).glyph.bitmap.rows;
+            Character character =
+            this.atlas.addChar(
+                    (*face).glyph.bitmap.buffer[0 .. glyphSizeX*glyphSizeY],
+                vec2!int([cast(int)glyphSizeX, cast(int)glyphSizeY]),
+                vec2!int([cast(int)(*face).glyph.bitmap_left, cast(int)(*face).glyph.bitmap_top]),
+                cast(uint)(*face).glyph.advance.x
+            );
+            characters[ch] = character;
+
+
+            glBindTexture(GL_TEXTURE_2D, this.textureId);
+            glTexImage2D(
+                GL_TEXTURE_2D,
+                0,
+                GL_RED,
+                this.atlas.size.x,
+                this.atlas.size.y,
+                0,
+                GL_RED,
+                GL_UNSIGNED_BYTE,
+                this.atlas.buffer.ptr
+            );
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glBindTexture(GL_TEXTURE_2D, 0);
+
+            foreach(cb; callBack){
+                cb();
+            }
+
+            return character;
+        }
+        void addCallBack(uint id, void delegate() dg){
+            this.callBack[id] = dg;
+        }
+        void removeCallBack(uint id){
+            this.callBack.remove(id);
+        }
+        vec2!int getSize() const pure{
+            return this.atlas.size;
+        }
+        uint getTextureId(){
+            return this.textureId;
+        }
+
+        ~this(){
+            glDeleteTextures(1, &this.textureId);
+        }
+
+    private:
+        int                     size;
+        Atlas                   atlas;
+        Character[dchar]        characters;
+        uint                    textureId;
+        void delegate()[uint]   callBack;
+
+        FT_Face                 face = null;
+    }
+
     shared static this(){
         version(Windows) loadFreeType("libs/freetype.dll");
         else loadFreeType();
@@ -604,10 +738,29 @@ class GL20Font: GLFont{
             assert(false);
         }
     }
-    this(){
-        glGenTextures(1, &textureId);
+    uint register(uint size, void delegate() dg){
+        idToSize[id] = size;
+        count[size]++;
+
+        if(count[size] == 1)
+            fonts[size] = SizedFont(size, this.face);
+        fonts[size].addCallBack(id, dg);
+
+        return id++;
+    }
+    void unregister(uint id){
+        uint size = idToSize[id];
+        if(size && count[size] == 1){
+            count.remove(size);
+            fonts.remove(size);
+        }else {
+            count[size]--;
+            fonts[size].removeCallBack(id);
+        }
     }
     void setFont(string dest){
+        if(this.face != null)
+            FT_Done_Face(face);
         if(FT_New_Face(ft, dest.ptr, 0, &face)){
             import quickd.core.logger: globalLogger, LogMessage;
             import std.conv: to;
@@ -622,126 +775,32 @@ class GL20Font: GLFont{
             assert(false);
         }
         this.fontDest = dest;
-    }
-    void setFontSize(uint id, ushort size){
-        import std.math.rounding: ceil;
-        FT_Set_Pixel_Sizes(face, 0, size);
-
-        const double pixel_size = size;
-
-        // Высота и ширина шрифта в пикселях
-        int fontHeight = cast(int)ceil(((*face).bbox.yMax - (*face).bbox.yMin) * pixel_size / (*face).units_per_EM);
-        int fontWidth = cast(int)ceil(((*face).bbox.xMax - (*face).bbox.xMin) * pixel_size / (*face).units_per_EM);
-
-        this.atlas.setMaxSize(vec2!int([fontWidth, fontHeight]));
-        /// TODO: write a normal set font size(for normal load and read font. Read in any size for one font.)
-    }
-    Character getChar(dchar ch){
-        auto character = ch in this.characters;
-        if(character is null) return loadChar(ch);
-        return *character;
-    }
-    Character loadChar(dchar ch){
-        debug if((ch in this.characters) !is null){
-            import quickd.core.logger: globalLogger, LogMessage;
-            import std.conv: to;
-            LogMessage message = LogMessage();
-
-            message.message = "This font is allready loaded";
-            message.font    = fontDest;
-            message.symbol  = ch.to!string;
-            message.status  = LogMessage.Status.error;
-
-            globalLogger.log(message);
-            throw new Exception("Font is allready loaded: " ~ ch.to!string);
-        }
-        if (FT_Load_Char(face, cast(uint)ch, FT_LOAD_RENDER)){
-            import quickd.core.logger: globalLogger, LogMessage;
-            import std.conv: to;
-            LogMessage message = LogMessage();
-
-            message.message = "Freetype failed to load Glyph";
-            message.font    = fontDest;
-            message.symbol  = ch.to!string;
-            message.status  = LogMessage.Status.fatal;
-
-            globalLogger.log(message);
-            assert(false);
-        }
-        const size_t glyphSizeX = (*face).glyph.bitmap.width;
-        const size_t glyphSizeY = (*face).glyph.bitmap.rows;
-        Character character =
-        this.atlas.addChar(
-                (*face).glyph.bitmap.buffer[0 .. glyphSizeX*glyphSizeY],
-            vec2!int([cast(int)glyphSizeX, cast(int)glyphSizeY]),
-            vec2!int([cast(int)(*face).glyph.bitmap_left, cast(int)(*face).glyph.bitmap_top]),
-            cast(uint)(*face).glyph.advance.x
-        );
-        characters[ch] = character;
-
-
-        glBindTexture(GL_TEXTURE_2D, this.textureId);
-        glTexImage2D(
-            GL_TEXTURE_2D,
-            0,
-            GL_RED,
-            this.atlas.size.x,
-            this.atlas.size.y,
-            0,
-            GL_RED,
-            GL_UNSIGNED_BYTE,
-            this.atlas.buffer.ptr
-        );
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        foreach(ref callback; this.callBacks.values)
-            callback();
-
-        return character;
-    }
-    size_t addCallBack(void delegate() dg){
-        this.callBacks[this.id] = dg;
-        return this.id++;
-    }
-    void removeCallBack(size_t id){
-        this.callBacks.remove(id);
-    }
-    vec2!int getSize() const pure{
-        return this.atlas.size;
-    }
-    uint getId(){
-        return this.textureId;
-    }
-    void loadChars(dstring str){
-        foreach(ch; str){
-            const auto t = this.loadChar(ch);
+        foreach(ref font; fonts){
+            font.clear(this.face);
         }
     }
+    vec2!int getSize(uint id) const pure{
+        return this.fonts[this.idToSize[id]].getSize();
+    }
+    Character getChar(uint id, dchar ch){
+        return this.fonts[this.idToSize[id]].getChar(ch);
+    }
+    uint getTextureId(uint id){
+        return this.fonts[this.idToSize[id]].getTextureId();
+    }
+
     ~this(){
-        FT_Done_Face(face);
-        glDeleteTextures(1, &this.textureId);
+        if(this.face != null)
+            FT_Done_Face(face);
     }
-    GLShader shader;
 private:
-    struct SizedFont{
-        Character[dchar]        characters;
-        Atlas                   atlas;
-    }
-    void delegate()[size_t] callBacks;
-    size_t                  id;
+    SizedFont[uint]     fonts;
+    uint[uint]          idToSize;
+    uint[uint]          count;
+    uint                id = 0;
 
-    uint                    textureId;
-
-    SizedFont[uint]         sizedFont;
-    uint[uint]              count;
-    uint[uint]              idToSize;
-
-    string                  fontDest;
-    FT_Face                 face = null;
+    FT_Face             face = null;
+    string              fontDest;
 }
 
 struct Atlas{
@@ -756,6 +815,13 @@ struct Atlas{
 
         this.position = [0,0];
         this.maxCharSize = maxCharSize;
+    }
+    void clear(){
+        this.buffer.length = 0;
+        this.size = [maxCharSize.x*12,0];
+
+        this.position = [0,0];
+        this.yLine = 0;
     }
     Character addChar(ubyte[] buffer, vec2!int size, vec2!int bearing, uint advance){
         if((position.x + size.x) > this.size.x){
